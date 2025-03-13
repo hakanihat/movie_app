@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 class Movie {
   final String id;
   final String title;
@@ -75,4 +78,16 @@ class Movie {
       posterUrl: (json['posterurl'] ?? '').toString(),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Movie &&
+        other.title == title &&
+        other.releaseDate == releaseDate &&
+        listEquals(other.actors, actors);
+  }
+
+  @override
+  int get hashCode => Object.hash(title, releaseDate, Object.hashAll(actors));
 }

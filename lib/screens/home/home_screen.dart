@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:movie_app/models/movie.dart';
 import 'package:movie_app/screens/movie/movie_detail_screen.dart';
 import 'package:movie_app/screens/movie/movie_list_item.dart';
-import 'package:movie_app/screens/profile/profile_screen.dart';
 import 'package:movie_app/services/movie_service.dart';
 import 'package:movie_app/services/watchlist_service.dart';
+import 'package:movie_app/screens/profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,16 +17,20 @@ class HomeScreenState extends State<HomeScreen> {
   final _movieService = MovieService();
   final _watchlistService = WatchlistService();
 
-  late Future<List<Movie>> _futureMovies;
-  List<Movie> _allMovies = [];
-  List<Movie> _filteredMovies = [];
+  // Future returns a Set<Movie> to ensure uniqueness.
+  late Future<Set<Movie>> _futureMovies;
+  Set<Movie> _allMovies = {};
+  Set<Movie> _filteredMovies = {};
   Set<String> _watchlistedIds = {};
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _futureMovies = _movieService.fetchMovies();
+    // Convert the fetched list to a set.
+    _futureMovies = _movieService.fetchMovies().then(
+      (movies) => movies.toSet(),
+    );
     _fetchWatchlist();
   }
 
@@ -49,7 +53,7 @@ class HomeScreenState extends State<HomeScreen> {
                 (movie) =>
                     movie.title.toLowerCase().contains(query.toLowerCase()),
               )
-              .toList();
+              .toSet();
     });
   }
 
@@ -104,7 +108,7 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<Movie>>(
+            child: FutureBuilder<Set<Movie>>(
               future: _futureMovies,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -125,6 +129,7 @@ class HomeScreenState extends State<HomeScreen> {
                   _filteredMovies = _allMovies;
                 }
 
+                // Convert set to list using elementAt(index) for ListView builder
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(
                     vertical: 8,
@@ -132,8 +137,7 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   itemCount: _filteredMovies.length,
                   itemBuilder: (context, index) {
-                    final movie = _filteredMovies[index];
-
+                    final movie = _filteredMovies.elementAt(index);
                     return MovieListItem(
                       movie: movie,
                       isInitiallyInWatchlist: _watchlistedIds.contains(
