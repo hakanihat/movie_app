@@ -4,6 +4,7 @@ import 'package:movie_app/screens/movie/movie_detail_screen.dart';
 import 'package:movie_app/screens/movie/movie_list_item.dart';
 import 'package:movie_app/screens/profile/profile_screen.dart';
 import 'package:movie_app/services/movie_service.dart';
+import 'package:movie_app/services/watchlist_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,16 +15,30 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   final _movieService = MovieService();
+  final _watchlistService = WatchlistService();
 
   late Future<List<Movie>> _futureMovies;
   List<Movie> _allMovies = [];
   List<Movie> _filteredMovies = [];
+  Set<String> _watchlistedIds = {};
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _futureMovies = _movieService.fetchMovies();
+    _fetchWatchlist();
+  }
+
+  Future<void> _fetchWatchlist() async {
+    try {
+      final watchlistedIds = await _watchlistService.fetchWatchlistIds();
+      setState(() {
+        _watchlistedIds = watchlistedIds;
+      });
+    } catch (e) {
+      debugPrint('Error fetching watchlist: $e');
+    }
   }
 
   void _filterMovies(String query) {
@@ -35,6 +50,16 @@ class HomeScreenState extends State<HomeScreen> {
                     movie.title.toLowerCase().contains(query.toLowerCase()),
               )
               .toList();
+    });
+  }
+
+  void _updateWatchlist(String movieId, bool isNowInWatchlist) {
+    setState(() {
+      if (isNowInWatchlist) {
+        _watchlistedIds.add(movieId);
+      } else {
+        _watchlistedIds.remove(movieId);
+      }
     });
   }
 
@@ -111,14 +136,19 @@ class HomeScreenState extends State<HomeScreen> {
 
                     return MovieListItem(
                       movie: movie,
-
+                      isInitiallyInWatchlist: _watchlistedIds.contains(
+                        movie.id,
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => MovieDetailScreen(),
+                            builder: (_) => MovieDetailScreen(movie: movie),
                           ),
                         );
+                      },
+                      onWatchlistChanged: (bool inWatchlist) {
+                        _updateWatchlist(movie.id, inWatchlist);
                       },
                     );
                   },

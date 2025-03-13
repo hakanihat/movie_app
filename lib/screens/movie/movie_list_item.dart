@@ -1,23 +1,91 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:movie_app/models/movie.dart';
-
+import 'package:movie_app/services/watchlist_service.dart';
+import 'package:movie_app/widgets/hover_animated_button.dart';
 import 'widgets/rating_chip.dart';
 
 class MovieListItem extends StatefulWidget {
   final Movie movie;
   final VoidCallback onTap;
+  final bool isInitiallyInWatchlist;
+  final ValueChanged<bool>? onWatchlistChanged;
 
-  const MovieListItem({super.key, required this.movie, required this.onTap});
+  const MovieListItem({
+    super.key,
+    required this.movie,
+    required this.onTap,
+    this.isInitiallyInWatchlist = false,
+    this.onWatchlistChanged,
+  });
 
   @override
   State<MovieListItem> createState() => _MovieListItemState();
 }
 
 class _MovieListItemState extends State<MovieListItem> {
+  final WatchlistService _watchlistService = WatchlistService();
+  final User? _user = FirebaseAuth.instance.currentUser;
+
+  late bool _isInWatchlist;
+  bool _isToggling = false;
+  StreamSubscription? _watchlistSubscription;
+
   @override
   void initState() {
     super.initState();
+    _isInWatchlist = widget.isInitiallyInWatchlist;
+
+    if (_user != null) {
+      _watchlistSubscription = _watchlistService.watchlistStream().listen((
+        movies,
+      ) {
+        final inWatchlist = movies.any((m) => m.id == widget.movie.id);
+        if (inWatchlist != _isInWatchlist) {
+          setState(() {
+            _isInWatchlist = inWatchlist;
+          });
+          widget.onWatchlistChanged?.call(inWatchlist);
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant MovieListItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isInitiallyInWatchlist != oldWidget.isInitiallyInWatchlist) {
+      setState(() {
+        _isInWatchlist = widget.isInitiallyInWatchlist;
+      });
+    }
+  }
+
+  Future<void> _toggleWatchlist() async {
+    if (_user == null) {
+      return;
+    }
+    setState(() => _isToggling = true);
+
+    final newState = !_isInWatchlist;
+    setState(() {
+      _isInWatchlist = newState;
+    });
+
+    try {
+      if (newState) {
+        await _watchlistService.addToWatchlist(widget.movie);
+      } else {
+        await _watchlistService.removeFromWatchlist(widget.movie.id);
+      }
+      widget.onWatchlistChanged?.call(newState);
+    } catch (_) {
+      setState(() => _isInWatchlist = !_isInWatchlist);
+    }
+
+    setState(() => _isToggling = false);
   }
 
   @override
@@ -100,6 +168,8 @@ class _MovieListItemState extends State<MovieListItem> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    _buildWatchlistButton(context),
                   ],
                 ),
               ),
@@ -118,8 +188,41 @@ class _MovieListItemState extends State<MovieListItem> {
     );
   }
 
+  Widget _buildWatchlistButton(BuildContext context) {
+    if (_user == null) {
+      return OutlinedButton.icon(
+        onPressed: null,
+        icon: const Icon(Icons.bookmark_outline),
+        label: const Text("Sign in to watchlist"),
+      );
+    }
+    if (_isToggling) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    final label = _isInWatchlist ? 'In watchlist' : 'Add to watchlist';
+    final icon = _isInWatchlist ? Icons.bookmark_remove : Icons.bookmark_add;
+
+    return animatedButton(
+      button: ElevatedButton.icon(
+        onPressed: _toggleWatchlist,
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          elevation: 3,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
+    _watchlistSubscription?.cancel();
     super.dispose();
   }
 }
