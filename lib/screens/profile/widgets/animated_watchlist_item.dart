@@ -91,7 +91,11 @@ class _AnimatedWatchlistItemState extends State<AnimatedWatchlistItem>
                             errorBuilder:
                                 (ctx, obj, st) => const SizedBox(
                                   height: 120,
-                                  child: Icon(Icons.broken_image),
+                                  width: 80,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.blueGrey,
+                                  ),
                                 ),
                           ),
                         ),
