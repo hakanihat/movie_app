@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:movie_app/screens/auth/widgets/auth_form.dart';
 import 'package:movie_app/services/auth_service.dart';
+import 'package:movie_app/widgets/gradient_card.dart';
 import '../home/home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -125,7 +126,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       minHeight: MediaQuery.of(context).size.height / 2,
                     ),
                     child: Center(
-                      child: Card(
+                      child: GradientCard(
                         child: Container(
                           width: 350,
                           padding: const EdgeInsets.symmetric(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:movie_app/widgets/hover_animated_button.dart';
 
 class AuthForm extends StatefulWidget {
   final String title;
@@ -149,12 +150,14 @@ class _AuthFormState extends State<AuthForm> {
             ],
             const SizedBox(height: 20),
 
-            ElevatedButton(
-              onPressed: submit,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
+            animatedButton(
+              button: ElevatedButton(
+                onPressed: submit,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: Text(widget.isLogin ? 'LOGIN' : 'CREATE ACCOUNT'),
               ),
-              child: Text(widget.isLogin ? 'LOGIN' : 'CREATE ACCOUNT'),
             ),
 
             const SizedBox(height: 12),
@@ -185,15 +188,17 @@ class _AuthFormState extends State<AuthForm> {
             ),
             const SizedBox(height: 12),
 
-            ElevatedButton.icon(
-              icon: Image.asset('assets/images/google_logo.png', height: 20),
-              label: const Text('Sign in with Google'),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.black,
-                backgroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(48),
+            animatedButton(
+              button: ElevatedButton.icon(
+                icon: Image.asset('assets/images/google_logo.png', height: 20),
+                label: const Text('Sign in with Google'),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: widget.onGoogleSignIn,
               ),
-              onPressed: widget.onGoogleSignIn,
             ),
           ],
         );
