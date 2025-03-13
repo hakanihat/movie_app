@@ -5,9 +5,12 @@ import 'package:movie_app/widgets/hover_animated_button.dart';
 class AuthForm extends StatefulWidget {
   final String title;
   final bool isLogin;
-  final Future<void> Function({required String email, required String password})
+  final Future<void> Function({
+    required String email,
+    required String password,
+    String? confirmPassword,
+  })
   onSubmit;
-
   final VoidCallback onGoogleSignIn;
   final VoidCallback onToggleAuthMode;
 
@@ -58,7 +61,6 @@ class _AuthFormState extends State<AuthForm> {
         _showErrorSnackBar("Passwords do not match!");
         return;
       }
-
       final regex = RegExp(r'^(?=.*[A-Z])(?=.*\d).+$');
       if (!regex.hasMatch(password)) {
         _showErrorSnackBar(
@@ -71,7 +73,15 @@ class _AuthFormState extends State<AuthForm> {
     setState(() => _isLoading = true);
 
     try {
-      await widget.onSubmit(email: email, password: password);
+      if (widget.isLogin) {
+        await widget.onSubmit(email: email, password: password);
+      } else {
+        await widget.onSubmit(
+          email: email,
+          password: password,
+          confirmPassword: _confirmPasswordController.text.trim(),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       _showErrorSnackBar(e.message ?? "Authentication error!");
     } catch (err) {
@@ -149,7 +159,6 @@ class _AuthFormState extends State<AuthForm> {
               ),
             ],
             const SizedBox(height: 20),
-
             animatedButton(
               button: ElevatedButton(
                 onPressed: submit,
@@ -159,7 +168,6 @@ class _AuthFormState extends State<AuthForm> {
                 child: Text(widget.isLogin ? 'LOGIN' : 'CREATE ACCOUNT'),
               ),
             ),
-
             const SizedBox(height: 12),
             TextButton(
               onPressed: widget.onToggleAuthMode,
@@ -169,13 +177,11 @@ class _AuthFormState extends State<AuthForm> {
                     : 'Already have an account? Login here',
               ),
             ),
-
             if (widget.isLogin)
               TextButton(
                 onPressed: _forgotPassword,
                 child: const Text("Forgot Password?"),
               ),
-
             Row(
               children: const [
                 Expanded(child: Divider()),
@@ -187,7 +193,6 @@ class _AuthFormState extends State<AuthForm> {
               ],
             ),
             const SizedBox(height: 12),
-
             animatedButton(
               button: ElevatedButton.icon(
                 icon: Image.asset('assets/images/google_logo.png', height: 20),

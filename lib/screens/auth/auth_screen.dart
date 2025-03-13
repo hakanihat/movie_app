@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:movie_app/screens/auth/widgets/auth_form.dart';
 import 'package:movie_app/services/auth_service.dart';
-import 'package:movie_app/widgets/gradient_card.dart';
 import '../home/home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -61,7 +60,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
       if (_isLogin) {
         await _authService.signIn(email.trim(), password.trim());
@@ -74,9 +72,30 @@ class _AuthScreenState extends State<AuthScreen> {
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Authentication error')),
-      );
+      String errorMessage = e.message ?? 'Authentication error';
+
+      if (_isLogin) {
+        switch (e.code) {
+          case 'user-not-found':
+          case 'invalid-credential':
+            errorMessage = "User doesn't exist. Please, try to register.";
+            break;
+          case 'wrong-password':
+            errorMessage = "Wrong password. Please try again.";
+            break;
+          case 'invalid-email':
+            errorMessage = "Invalid email format. Please check and try again.";
+            break;
+        }
+      } else {
+        if (e.code == 'email-already-in-use') {
+          errorMessage = "This email is already in use. Please log in instead.";
+        }
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -87,6 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final user = await _authService.signInWithGoogle();
       if (!mounted) return;
+
       if (user != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -126,7 +146,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       minHeight: MediaQuery.of(context).size.height / 2,
                     ),
                     child: Center(
-                      child: GradientCard(
+                      child: Card(
                         child: Container(
                           width: 350,
                           padding: const EdgeInsets.symmetric(
