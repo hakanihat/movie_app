@@ -176,12 +176,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             const SizedBox(width: 50),
                             if (!_isEditingName)
-                              Text(
-                                displayName,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              Container(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    displayName,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               )
                             else
@@ -216,6 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
+
                         Text(
                           email,
                           style: const TextStyle(
